@@ -1,0 +1,101 @@
+<html>
+  <title>Package Butler</title>
+  <style>
+    #versions,
+    #globalPackages {
+      color: #fff;
+      padding: 1em;
+    }
+    .version,
+    .package {
+      padding-top: 3px;
+      width: auto;
+      display: flex;
+      align-items: baseline;
+    }
+    .label {
+      font-size: 1em;
+      width: 180px;
+      text-align: right;
+      padding-right: 12px;
+    }
+    .version-number,
+    .version-package {
+      font-size: 1.4em;
+      font-weight: 300;
+    }
+  </style>
+  <script>
+    async function run() {
+      await ['node', 'npm', 'yarn'].forEach(value => getVersion(value));
+      await getGlobalPackages();
+    }
+
+    async function getVersion(el) {
+      try {
+        const version = await loadCommand(`${el} -v`);
+        createVersionEl(el, version);
+      } catch (err) {
+        console.log(err);
+      }
+    }
+
+    async function getGlobalPackages() {
+      try {
+        let globalPackages = await loadCommand('npm list -g --depth=0');
+        globalPackages = globalPackages.split('\n');
+
+        const packagesArr = globalPackages.forEach(value => {
+          if (value.indexOf('--') > -1)
+            return createGlobalPackage(value.replace(/(^.-- )/gm, ''));
+        });
+      } catch (err) {
+        console.log(err);
+      }
+    }
+
+    function createGlobalPackage(entry) {
+      const indexOfVersion = entry.match(/(@\d.+)$/).index;
+
+      const divContainer = document.createElement('div');
+      divContainer.classList.add('package');
+
+      const labelEl = document.createElement('span');
+      labelEl.classList.add('label');
+      labelEl.textContent = entry.slice(0, indexOfVersion);
+
+      const versionPackage = document.createElement('span');
+      versionPackage.classList.add('version-package');
+      versionPackage.textContent = entry.slice(indexOfVersion + 1);
+
+      divContainer.appendChild(labelEl);
+      divContainer.appendChild(versionPackage);
+
+      document.getElementById('globalPackages').appendChild(divContainer);
+    }
+
+    function createVersionEl(label, version) {
+      const divContainer = document.createElement('div');
+      divContainer.classList.add('version');
+
+      const labelEl = document.createElement('span');
+      labelEl.classList.add('label');
+      labelEl.textContent = label.toString().toUpperCase() + ': ';
+
+      const versionNumber = document.createElement('span');
+      versionNumber.classList.add('version-number');
+      versionNumber.textContent = version;
+
+      divContainer.appendChild(labelEl);
+      divContainer.appendChild(versionNumber);
+
+      document.getElementById('versions').appendChild(divContainer);
+    }
+  </script>
+
+  <body onload="run()">
+    <div id="versions"></div>
+    <hr />
+    <div id="globalPackages"><h2>Global Packages</h2></div>
+  </body>
+</html>
